@@ -1,0 +1,464 @@
+#include <Wire.h>
+#include "SSD1306Wire.h" 
+#include <string>
+#include <iostream>
+#include <sstream>
+
+//#include "gac.h"
+//#include "images.h"
+
+SSD1306Wire  display(0x3c, 21, 22);
+
+int botaoSobe = 12;
+int botaoDesce = 13;
+int botaoOK = 14;
+int botaoX = 27;
+int botaoDireita = 26;
+int aHorario[10][2] = {};
+int vbotaoDesce = 0, vbotaoSobe=0, vbotaoOK = 0, vbotaoX=0, vbotaoDireita=0;
+unsigned long currentMillis = millis();
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println();
+  Serial.println();
+  pinMode(botaoSobe, INPUT);
+  pinMode(botaoDesce, INPUT);
+  pinMode(botaoOK, INPUT);
+  pinMode(botaoX, INPUT);
+  pinMode(botaoDireita, INPUT);
+
+  // Initialising the UI will init the display too.
+  display.init();
+
+  display.flipScreenVertically();
+}
+
+void loop()
+{
+  //display.clear();
+  // draw the current demo method
+  //display.setFont(ArialMT_Plain_10);
+
+  // The coordinates define the left starting point of the text
+  //display.drawXbm(34, 14, 60, 36, WiFi_Logo_bits);
+  //display.display();
+  //display.drawXbm(34, 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
+  //delay(7500);
+  display.clear();
+  Menu();
+  //MovimentaMenu(45);
+
+}
+
+void Menu()
+{
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(64, 0, "MENU");
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(10, 15, "Adicionar horarios");
+  display.drawString(10, 25, "Horarios");
+  display.display();
+  SMovimentaMe();
+}
+
+void SMovimentaMe()
+{
+  int coluna = 0, linha = 15, vbotaoDesce = 0, vbotaoSobe=0, vbotaoOK = 0;
+  bool cancel = false;
+  while (true)
+  {
+    if (cancel)
+    {
+      break;
+    }
+    display.setColor(WHITE);
+    display.drawString(coluna, linha, "->");
+    display.display();
+    vbotaoSobe = digitalRead(botaoSobe);
+    vbotaoDesce = digitalRead(botaoDesce);
+    vbotaoOK = digitalRead(botaoOK);
+    while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW)
+    {
+      vbotaoSobe = digitalRead(botaoSobe);
+      vbotaoDesce = digitalRead(botaoDesce);
+      vbotaoOK = digitalRead(botaoOK);
+      if (vbotaoDesce == HIGH)
+      {
+        if (linha<25) // desce
+        {
+          display.setColor(BLACK);
+          display.drawString(0, linha, "->");
+          display.display();
+          linha += 10;
+          break;
+        }
+      }
+      if (vbotaoSobe == HIGH)
+      {
+        if (linha>15) //sobe
+        {
+          display.setColor(BLACK);
+          display.drawString(0, linha, "->");
+          display.display();
+          linha -= 10;
+          break;
+        }
+      }
+      if (vbotaoOK == HIGH) // ok
+      {
+        if (linha == 15)
+        {
+          //linhamax = 25;
+          Adicionar();
+        }
+        else if (linha == 25)
+        {
+          Horarios();
+        }
+        cancel = true;
+        break;
+      }
+    }
+  }
+}
+
+void Adicionar()
+{
+  int horario = 0, racao = 0;
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(64, 0, "ADICIONAR");
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(10, 15, "Horario:");
+  display.drawString(60, 15, "0");
+  display.drawString(72, 15, ":");
+  display.drawString(84, 15, "0");
+  display.drawString(10, 25, "Qtd Ração:");
+  display.drawString(75, 25, "0");
+  display.display();
+  MovimentAdd();
+}
+
+void MovimentAdd()
+{
+  int coluna = 0, linha = 15, horario=0, minuto=0, racao=0;
+  String horarioStr = "0", minutoStr = "0", racaoStr = "0";
+  bool cancel = false;
+  display.setFont(ArialMT_Plain_10);
+  //display.drawString(60, 15, horarioStr);
+  while (true)
+  {
+    if (cancel)
+    {
+      break;
+    }
+    display.setColor(WHITE);
+    display.drawString(0, linha, "->");
+    display.display();
+    vbotaoSobe = digitalRead(botaoSobe);
+    vbotaoDesce = digitalRead(botaoDesce);
+    vbotaoOK = digitalRead(botaoOK);
+    vbotaoX = digitalRead(botaoX);
+    vbotaoDireita = digitalRead(botaoDireita);
+    while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW && vbotaoDireita == LOW && vbotaoX == LOW)
+    {
+      vbotaoSobe = digitalRead(botaoSobe);
+      vbotaoDesce = digitalRead(botaoDesce);
+      vbotaoOK = digitalRead(botaoOK);
+      vbotaoDireita = digitalRead(botaoDireita);
+      vbotaoX = digitalRead(botaoX);
+      if (vbotaoDesce == HIGH)
+      {
+        if (linha<25) // desce
+        {
+          if (coluna == 0)
+          {
+            display.setColor(BLACK);
+            display.drawString(0, linha, "->");
+            display.display();
+            linha += 10;
+            break;
+          }
+          else if (coluna == 60 && linha == 15) 
+          {          
+              display.setColor(BLACK);
+              display.drawString( coluna, linha , horarioStr);
+              display.display();
+              horario -= 1;
+              if (horario < 0)
+              {
+                horario = 23;
+              }
+              //std::stringstream horarioStr;// = horario;
+              horarioStr = String(horario);
+              display.setColor(WHITE);
+              display.drawString(coluna, linha, horarioStr);
+              display.display();
+              break;
+          }
+           else if (coluna == 84 && linha == 15) 
+          {   
+            display.setColor(BLACK);
+            display.drawString( coluna, linha , minutoStr);
+            display.display();
+            minuto -= 5;
+            if (minuto < 0)
+            {       
+              minuto = 0;
+            }
+            //std::stringstream horarioStr;// = horario;
+            minutoStr = String(minuto);
+            display.setColor(WHITE);
+            display.drawString(coluna, linha, minutoStr);
+            display.display();
+            break;
+          }
+          if (coluna == 75 && linha == 25)
+          {
+            display.setColor(BLACK);
+            display.drawString( coluna, linha , racaoStr);
+            display.display();
+            racao -= 50;
+            if (racao < 0)
+            {       
+              racao = 1000;
+            }
+            //std::stringstream horarioStr;// = horario;
+            racaoStr = String(racao);
+            display.setColor(WHITE);
+            display.drawString(coluna, linha, racaoStr);
+            display.display();
+            break;
+          }
+        }
+      }
+      
+      if (vbotaoSobe == HIGH) //sobe
+      {
+          if (coluna == 0 && linha > 15)
+          {
+            display.setColor(BLACK);
+            display.drawString(0, linha, "->");
+            display.display();
+            linha -= 10;
+            //vbotaoSobe = digitalRead(botaoSobe);
+            break;
+          }
+          else if (coluna == 60 && linha == 15) 
+          {   
+            display.setColor(BLACK);
+            display.drawString( coluna, linha , horarioStr);
+            display.display();
+            horario += 1;
+            if (horario > 23)
+            {       
+              horario = 0;
+            }
+            //std::stringstream horarioStr;// = horario;
+            horarioStr = String(horario);
+            display.setColor(WHITE);
+            display.drawString(coluna, linha, horarioStr);
+            display.display();
+            break;
+          }
+          else if (coluna == 84 && linha == 15) 
+          {   
+            display.setColor(BLACK);
+            display.drawString( coluna, linha , minutoStr);
+            display.display();
+            minuto += 5;
+            if (minuto > 60)
+            {       
+              minuto = 0;
+            }
+            //std::stringstream horarioStr;// = horario;
+            minutoStr = String(minuto);
+            display.setColor(WHITE);
+            display.drawString(coluna, linha, minutoStr);
+            display.display();
+            break;
+          }
+          if (coluna == 75 && linha == 25)
+          {
+            display.setColor(BLACK);
+            display.drawString( coluna, linha , racaoStr);
+            display.display();
+            racao += 50;
+            if (racao > 1000)
+            {       
+              racao = 0;
+            }
+            //std::stringstream horarioStr;// = horario;
+            racaoStr = String(racao);
+            display.setColor(WHITE);
+            display.drawString(coluna, linha, racaoStr);
+            display.display();
+            break;
+          }
+      }
+      if (vbotaoOK == HIGH && linha == 15) // ok
+      {
+        display.setColor(BLACK);
+        display.drawString(0, linha, "->");
+        display.display();
+        linha += 10;
+        coluna = 0;
+        break;
+      }
+      if (vbotaoX == HIGH) // cancel
+      {
+        //linhamax = 45;
+        cancel = true;
+        coluna = 0;
+        break;
+      }
+      
+      if (vbotaoDireita == HIGH) // DIREITA
+      {
+        if (linha == 15)
+        {
+          if (coluna == 0)
+          {
+            coluna = 60;
+            break;
+          }
+          else if (coluna == 60)
+          {
+            coluna = 84;
+            break;
+          }
+        }
+        else if (linha == 25)
+        {
+          if (coluna == 0)
+          {
+            coluna = 75;
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+void Horarios()
+{
+    int i=0,j,linha = 15;
+    aHorario[0][0] = 100;
+    aHorario[0][1] = 10;
+    aHorario[1][0] = 200;
+    aHorario[1][1] = 20;
+    aHorario[2][0] = 300;
+    aHorario[2][1] = 30;
+    aHorario[3][0] = 400;
+    aHorario[3][1] = 40;
+    aHorario[4][0] = 500;
+    aHorario[4][1] = 50;
+    aHorario[5][0] = 600;
+    aHorario[5][1] = 60;
+    aHorario[6][0] = 700;
+    aHorario[6][1] = 70;
+    display.clear();
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(64, 0, "Horarios");
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.setFont(ArialMT_Plain_10);
+    ImprimeHo(i);
+    MovimentaHo();
+}
+
+void MovimentaHo()
+{
+  int linha = 15,i;
+  while (true)
+  {
+    display.setColor(WHITE);
+    display.drawString(0, linha, "->");
+    display.display();
+    vbotaoSobe = digitalRead(botaoSobe);
+    vbotaoDesce = digitalRead(botaoDesce);
+    vbotaoOK = digitalRead(botaoOK);
+    while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW)
+    {
+      vbotaoSobe = digitalRead(botaoSobe);
+      vbotaoDesce = digitalRead(botaoDesce);
+      vbotaoOK = digitalRead(botaoOK);
+      if (vbotaoDesce == HIGH)
+      {
+        if (linha<45) // desce
+        {
+          display.setColor(BLACK);
+          display.drawString(0, linha, "->");
+          display.display();
+          linha += 10;
+          break;
+        }
+        else
+        {
+          if (i<9)
+          {
+            //if(aHorario[i+1][0] != 0)
+            //{ 
+              i++;
+              ImprimeHo(i);
+              break;
+            //}
+          }
+        }
+      }
+      if (vbotaoSobe == HIGH)
+      {
+        if (linha>15) //sobe
+        {
+          display.setColor(BLACK);
+          display.drawString(0, linha, "->");
+          display.display();
+          linha -= 10;
+          break;
+        }
+        else
+        {
+          if (i>0)
+          {
+            i--;
+            ImprimeHo(i);
+            break;
+          }
+        }
+      }
+      if (vbotaoOK == HIGH) // ok
+      {
+        
+      }
+    }
+  }
+}
+
+void ImprimeHo(int i)
+{
+  int linha = 15;
+  int maxarray = i+4;
+  display.clear();
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(64, 0, "Horarios");
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
+  for (i;i<maxarray;i++)
+    {
+        if (aHorario[i][0] != 0)
+        {
+          display.drawString(10, linha, "Horario: "+String(aHorario[i][0])+" Ração: "+String(aHorario[i][1]));
+          linha += 10;
+        }
+    }
+    i-4;
+    display.display();
+}
