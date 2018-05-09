@@ -16,7 +16,7 @@ int botaoOK = 14;
 int botaoX = 27;
 int botaoDireita = 26;
 int botaoEsquerda = 25;
-int aHorario[6][4] = {};
+int aHorario[6][5] = {};
 int CarregaArray;
 int vbotaoDesce=0, vbotaoSobe=0, vbotaoOK = 0, vbotaoX=0, vbotaoDireita=0, vbotaoEsquerda=0;
 int tempoPisca = 350;
@@ -35,10 +35,11 @@ void setup() {
   EEPROM.begin(4);
   for (CarregaArray=0;CarregaArray<6;CarregaArray++)
   {
-    aHorario[CarregaArray][0] = EEPROM.read((CarregaArray*4));
-    aHorario[CarregaArray][1] = EEPROM.read((CarregaArray*4)+1);
-    aHorario[CarregaArray][2] = (EEPROM.read((CarregaArray*4)+2))*10;
-    aHorario[CarregaArray][3] = EEPROM.read((CarregaArray*4)+3);
+    aHorario[CarregaArray][0] = EEPROM.read((CarregaArray*5));          //Hora
+    aHorario[CarregaArray][1] = EEPROM.read((CarregaArray*5)+1);        //Minuto
+    aHorario[CarregaArray][2] = (EEPROM.read((CarregaArray*5)+2))*10;   //Ração
+    aHorario[CarregaArray][3] = EEPROM.read((CarregaArray*5)+3);        //On/Off
+    aHorario[CarregaArray][4] = EEPROM.read((CarregaArray*5)+4);        //Id
   }
   EEPROM.end();
 
@@ -163,11 +164,11 @@ void Adicionar()
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_10);
   display.drawString(10, 15, "Horario:");
-  display.drawString(60, 15, "0");
+  display.drawString(60, 15, "00");
   display.drawString(72, 15, ":");
-  display.drawString(84, 15, "0");
+  display.drawString(84, 15, "00");
   display.drawString(10, 25, "Qtd Ração:");
-  display.drawString(75, 25, "0");
+  display.drawString(75, 25, "000");
   display.display();
   MovimentAdd();
 }
@@ -175,7 +176,7 @@ void Adicionar()
 void MovimentAdd()
 {
   int coluna = 0, linha = 15, horario=0, minuto=0, racao=0, H = 0,f;
-  String horarioStr = "0", minutoStr = "0", racaoStr = "0",caracter="->",situacao = "apagado";;
+  String horarioStr = "00", minutoStr = "00", racaoStr = "000",caracter="->",situacao = "apagado";
   bool cancel = false;
   display.setFont(ArialMT_Plain_10);
   while (true)
@@ -209,7 +210,7 @@ void MovimentAdd()
               {
                 horario = 23;
               }
-              horarioStr = String(horario);
+              horarioStr = AjustaHora(horario);
               caracter = horarioStr;
               //display.setColor(WHITE);
               //display.drawString(coluna, linha, horarioStr);
@@ -225,7 +226,7 @@ void MovimentAdd()
             {       
               minuto = 55;
             }
-            minutoStr = String(minuto);
+            minutoStr = AjustaMinuto(minuto);
             caracter = minutoStr;
             //display.setColor(WHITE);
             //display.drawString(coluna, linha, minutoStr);
@@ -242,7 +243,7 @@ void MovimentAdd()
               racao = 500;
             }
             //std::stringstream horarioStr;// = horario;
-            racaoStr = String(racao);
+            racaoStr = AjustaRacao(racao);
             caracter = racaoStr;
             escreveLed(coluna,linha,caracter);
             break;
@@ -267,7 +268,7 @@ void MovimentAdd()
             {       
               horario = 0;
             }
-            horarioStr = String(horario);
+            horarioStr = AjustaHora(horario);
             caracter = horarioStr;
             escreveLed(coluna,linha,caracter);
             break;
@@ -281,7 +282,7 @@ void MovimentAdd()
               minuto = 0;
             }
             //std::stringstream horarioStr;// = horario;
-            minutoStr = String(minuto);
+            minutoStr = AjustaHora(minuto);
             caracter = minutoStr;
             escreveLed(coluna,linha,caracter);
             break;
@@ -294,7 +295,7 @@ void MovimentAdd()
             {       
               racao = 0;
             }
-            racaoStr = String(racao);
+            racaoStr = AjustaRacao(racao);
             caracter = racaoStr;
             escreveLed(coluna,linha,caracter);
             break;
@@ -317,15 +318,17 @@ void MovimentAdd()
             if (aHorario[H][3] == 0)
             {
               EEPROM.begin(4);
-              EEPROM.write(H*4,horario);
-              EEPROM.write((H*4)+1,minuto);
-              EEPROM.write((H*4)+2,racao/10);
-              EEPROM.write((H*4)+3,H);
+              EEPROM.write(H*5,horario);
+              EEPROM.write((H*5)+1,minuto);
+              EEPROM.write((H*5)+2,racao/10);
+              EEPROM.write((H*5)+3,1);
+              EEPROM.write((H*5)+4,H);
               EEPROM.commit();
               aHorario[H][0] = horario;
               aHorario[H][1] = minuto;
               aHorario[H][2] = racao;
-              aHorario[H][3] = H;
+              aHorario[H][3] = 1;
+              aHorario[H][4] = H;
               EEPROM.begin(4);
               Serial.println(EEPROM.read(0));
               Serial.println(EEPROM.read(1));
@@ -424,32 +427,35 @@ void MovimentAdd()
 void Horarios()
 {
     int i=0,j,linha = 15;
-    display.clear();
+    /*display.clear();
     display.setTextAlignment(TEXT_ALIGN_CENTER);
     display.setFont(ArialMT_Plain_16);
     display.drawString(64, 0, "Horarios");
     display.setTextAlignment(TEXT_ALIGN_LEFT);
     display.setFont(ArialMT_Plain_10);
+    display.drawString(10, 14, "Hora");
+    display.drawString(30, 14, "Ração");
+    display.drawString(50, 14, "Ativo");*/
     ImprimeHo(i);
     MovimentaHo();
 }
 
 void MovimentaHo()
 {
-  int linha = 15,i=0;
+  int linha=24,i=0,coluna=0;
+  String caracter="->",situacao = "apagado";
   bool cancel = false;
   while (true)
   {
-    display.setColor(WHITE);
-    display.drawString(0, linha, "->");
-    display.display();
+    situacao = VerificaTempo(coluna, linha, caracter,situacao);
     EstadoBotao();
     if (cancel)
     {
       break;
     }
-    while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW && vbotaoX == LOW)
+    while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW && vbotaoX == LOW && vbotaoDireita == LOW && vbotaoEsquerda == LOW)
     {
+      situacao = VerificaTempo(coluna, linha, caracter,situacao);
       EstadoBotao();
       if (vbotaoDesce == HIGH)
       {
@@ -457,9 +463,7 @@ void MovimentaHo()
         {
           if(aHorario[i+1][0] != 0)
           {
-            display.setColor(BLACK);
-            display.drawString(0, linha, "->");
-            display.display();
+            limpaLed(0,linha, "->");
             linha += 10;
             break;
           }
@@ -481,9 +485,7 @@ void MovimentaHo()
       {
         if (linha>15) //sobe
         {
-          display.setColor(BLACK);
-          display.drawString(0, linha, "->");
-          display.display();
+          limpaLed(0,linha, "->");
           linha -= 10;
           break;
         }
@@ -507,34 +509,62 @@ void MovimentaHo()
         //coluna = 0;
         break;
       }
+      if (vbotaoDireita == HIGH)
+      {
+        if (coluna == 0)
+        {
+          limpaLed(coluna,linha,caracter);
+          escreveLed(coluna,linha,caracter);
+          caracter = AjustaAtivo(i);
+          coluna = 77;
+          break;
+        }
+      }
     }
   }
 }
 
 void ImprimeHo(int i)
 {
-  int linha = 15;
+  int linha = 24;
   int maxarray = i+4;
   int f;
+  String HoraStr, MinutoStr, RacaoStr,AtivoStr;
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.setFont(ArialMT_Plain_16);
   display.drawString(64, 0, "Horarios");
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_10);
+  display.drawString(10, 14, "Hora");
+  display.drawString(40, 14, "Ração");
+  display.drawString(75, 14, "Ativo");
   for (i;i<maxarray;i++)
     {
         if (aHorario[i][0] != 0)
         {
-          display.drawString(10, linha, "Hora: "+String(aHorario[i][0])+":"+String(aHorario[i][1])+" Ração: "+String(aHorario[i][2]));
+          HoraStr = AjustaHora(aHorario[i][0]);
+          MinutoStr = AjustaMinuto(aHorario[i][1]);
+          RacaoStr = AjustaRacao(aHorario[i][2]);
+          Serial.println(aHorario[i][3]);
+          AtivoStr = AjustaAtivo(aHorario[i][3]);
+          Serial.println(AtivoStr);
+          display.drawString(10, linha, HoraStr+":"+MinutoStr);
+          display.drawString(45, linha, RacaoStr);
+          display.drawString(77, linha, AtivoStr);
+          display.drawString(105, linha, "X");
           linha += 10;
         }
     }
     i = i-4;
+    Serial.println("Inicio EEPROM");
+    EEPROM.begin(4);
     for (f=0;f<256;f++)
-  {
-    Serial.println(EEPROM.read(f));
-  }
+    {
+      Serial.println(EEPROM.read(f));
+    }
+    EEPROM.end();
+    Serial.println("Fim EEPROM");
     display.display();
 }
 
@@ -585,3 +615,63 @@ String VerificaTempo(int coluna,int linha, String escrita, String situacao)
   return situacao;
 }
 
+String AjustaHora(int Hora)
+{
+  String HoraStr;
+  if (Hora < 10)
+  {
+    HoraStr = "0"+String(Hora);
+  }
+  else
+  {
+    HoraStr = String(Hora);
+  }
+  return HoraStr;
+}
+
+String AjustaMinuto(int Minuto)
+{
+  String MinutoStr;
+  if (Minuto < 10)
+  {
+    MinutoStr = "0"+String(Minuto);
+  }
+  else
+  {
+    MinutoStr = String(Minuto);
+  }
+  return MinutoStr;
+}
+
+String AjustaRacao(int Racao)
+{
+  String RacaoStr;
+  if (Racao < 100)
+  {
+    RacaoStr = "0"+String(Racao);
+    if (Racao < 50)
+    {
+      RacaoStr = RacaoStr+"0";
+    }
+  }
+  else
+  {
+    RacaoStr = String(Racao);
+  }
+  return RacaoStr;
+}
+
+String AjustaAtivo(int Ativo)
+{
+  String AtivoStr;
+  Serial.println(Ativo);
+  if (Ativo == 1)
+  {
+    AtivoStr = "ON";
+  }
+  else
+  {
+    AtivoStr = "OFF";
+  }
+  return AtivoStr;
+}
