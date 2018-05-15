@@ -103,12 +103,10 @@ void SMovimentaMe()
   int coluna = 0, linha = 15;//, vbotaoDesce = 0, vbotaoSobe=0, vbotaoOK = 0;
   bool cancel = false;
   String situacao = "apagado";
-  Serial.println("Entrou menu");
   while (true)
   {
     if (cancel)
     {
-      Serial.println("Break ");
       break;
     }
     situacao = VerificaTempo(coluna, linha, "->",situacao);
@@ -141,7 +139,6 @@ void SMovimentaMe()
         if (linha == 15)
         {
           Adicionar(true, "00", "00", "000");
-          Serial.println("Saiu Add");
         }
         else if (linha == 25)
         {
@@ -313,26 +310,22 @@ void MovimentAdd()
           {
             TelaErro("Cadastro cheio","Número máximo de","horarios atingidos");
             Adicionar(false, horarioStr, minutoStr, racaoStr);
+            coluna = 0;
             break;
           }
-          Serial.println("Antes for");
           for (H=0;H<6;H++)
           {
             if (aHorario[H][4] == 255)
             {
-              Serial.println("H: "+String(H));
-              Serial.println("Antes racao");
               if (racao == 0)
               {
-                Serial.println("Antes TelaRacao");
                 TelaErro("Ração Zerada", "Vai alimentar seu animal", "com nada?");
                 Adicionar(false, horarioStr, minutoStr, racaoStr);
+                coluna = 0;
                 break;
               }
               else
               {
-                Serial.println("Horario inserido: "+String(horario));
-                Serial.println("H*5: "+String(H*5));
                 EEPROM.begin(255);
                 EEPROM.write(H*5,horario);
                 EEPROM.write((H*5)+1,minuto);
@@ -469,7 +462,6 @@ void MovimentaHo()
     EstadoBotao();
     if (cancel)
     {
-      Serial.println("Cancel MovimentoHo");
       break;
     }
     while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW && vbotaoX == LOW && vbotaoDireita == LOW && vbotaoEsquerda == LOW)
@@ -480,10 +472,16 @@ void MovimentaHo()
       {
         if (linha<45)
         {
-          Serial.println("Horario: "+String(aHorario[i+1][0]));
-          Serial.println("Valor de i desce: "+String(i));
           if(i+1 < 6 && aHorario[i+1][4] != 255)
           {
+            if (coluna == 77)
+            {
+              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][4]));
+              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][4]));
+              limpaLed(coluna,linha,AjustaAtivo(aHorario[i][4]));
+              escreveLed(coluna,linha,AjustaAtivo(aHorario[i][4]));
+              caracter = AjustaAtivo(aHorario[i+1][4]);
+            }
             limpaLed(0,linha, "->");
             linha += 10;
             i++;
@@ -492,12 +490,11 @@ void MovimentaHo()
         }
         else
         {
-          if (i>=3)
+          if (i>=3) // Se valor da linha for 4
           {
-            if(i+1 < 6)
+            if(i+1 < 6) // Se o proximo for menor que 6 que é o maximo
             { 
               i++;
-              Serial.println("Altera i: "+String(i));
               ImprimeHo(i-3);
               break;
             }
@@ -508,7 +505,6 @@ void MovimentaHo()
       {
         if (linha>24)
         {
-          Serial.println("Valor de i sobe: "+String(i));
           limpaLed(0,linha, "->");
           linha -= 10;
           i--;
@@ -528,7 +524,6 @@ void MovimentaHo()
       {
         if (coluna == 77)
         {
-          Serial.println("Ativo antes de alterar: "+String(aHorario[i][3]));
           if (aHorario[i][3] == 0)
           {
             limpaLed(coluna,linha,caracter);
@@ -566,9 +561,7 @@ void MovimentaHo()
         {
           limpaLed(coluna,linha,caracter);
           escreveLed(coluna,linha,caracter);
-          Serial.println("i: "+String(i));
           caracter = AjustaAtivo(aHorario[i][3]);
-          Serial.println("caracter: "+caracter);
           coluna = 77;
           break;
         }
@@ -626,9 +619,7 @@ void ImprimeHo(int i)
           HoraStr = AjustaHora(aHorario[i][0]);
           MinutoStr = AjustaMinuto(aHorario[i][1]);
           RacaoStr = AjustaRacao(aHorario[i][2]);
-          Serial.println("Ativo: "+String(aHorario[i][3]));
           AtivoStr = AjustaAtivo(aHorario[i][3]);
-          Serial.println("Ativo ajustado: "+String(AtivoStr));
           display.drawString(10, linha, HoraStr+":"+MinutoStr);
           display.drawString(45, linha, RacaoStr);
           display.drawString(77, linha, AtivoStr);
@@ -744,7 +735,6 @@ String AjustaRacao(int Racao)
 String AjustaAtivo(int Ativo)
 {
   String AtivoStr;
-  Serial.println("AjustaAtivo: "+String(Ativo));
   if (Ativo == 1)
   {
     AtivoStr = "ON";
