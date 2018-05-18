@@ -842,22 +842,23 @@ void ExcluirHorario(int i)
         aHorario[vlr][3] = aHorario[vlr+1][3];
         aHorario[vlr][4] = aHorario[vlr+1][4] - 1;
         lExcluido = true;
+        i++;
       }
-      else
-      {
-        EEPROM.begin(255);
-        EEPROM.write(vlr,255);
-        EEPROM.write((vlr*5)+1,255);
-        EEPROM.write((vlr*5)+2,255);
-        EEPROM.write((vlr*5)+3,255);
-        EEPROM.write((vlr*5)+4,255);
-        EEPROM.end();
-        aHorario[vlr][0] = 255;
-        aHorario[vlr][1] = 255;
-        aHorario[vlr][2] = 255;
-        aHorario[vlr][3] = 255;
-        aHorario[vlr][4] = 255;
-      }
+    }
+    else
+    {
+      EEPROM.begin(255);
+      EEPROM.write(vlr,255);
+      EEPROM.write((vlr*5)+1,255);
+      EEPROM.write((vlr*5)+2,255);
+      EEPROM.write((vlr*5)+3,255);
+      EEPROM.write((vlr*5)+4,255);
+      EEPROM.end();
+      aHorario[vlr][0] = 255;
+      aHorario[vlr][1] = 255;
+      aHorario[vlr][2] = 255;
+      aHorario[vlr][3] = 255;
+      aHorario[vlr][4] = 255;
     }
   }
 }
