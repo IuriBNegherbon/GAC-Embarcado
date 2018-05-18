@@ -470,17 +470,18 @@ void MovimentaHo()
       EstadoBotao();
       if (vbotaoDesce == HIGH) // DESCE
       {
-        if (linha<45)
+        if (linha<54)
         {
           if(i+1 < 6 && aHorario[i+1][4] != 255)
           {
             if (coluna == 77)
             {
-              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][4]));
-              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][4]));
-              limpaLed(coluna,linha,AjustaAtivo(aHorario[i][4]));
-              escreveLed(coluna,linha,AjustaAtivo(aHorario[i][4]));
-              caracter = AjustaAtivo(aHorario[i+1][4]);
+              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][3]));
+              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][3]));
+              limpaLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+              escreveLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+              caracter = AjustaAtivo(aHorario[i+1][3]);
+              situacao = "escrito";
             }
             limpaLed(0,linha, "->");
             linha += 10;
@@ -494,6 +495,15 @@ void MovimentaHo()
           {
             if(i+1 < 6) // Se o proximo for menor que 6 que é o maximo
             { 
+              if (coluna == 77)
+              {
+                Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][3]));
+                Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][3]));
+                limpaLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+                escreveLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+                caracter = AjustaAtivo(aHorario[i+1][3]);
+                situacao = "escrito";
+              }
               i++;
               ImprimeHo(i-3);
               break;
@@ -505,6 +515,15 @@ void MovimentaHo()
       {
         if (linha>24)
         {
+          if (coluna == 77)
+          {
+            Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i][3]));
+            Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i-1][3]));
+            limpaLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+            escreveLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+            caracter = AjustaAtivo(aHorario[i-1][3]);
+            situacao = "escrito";
+          }
           limpaLed(0,linha, "->");
           linha -= 10;
           i--;
@@ -514,6 +533,15 @@ void MovimentaHo()
         {
           if (i>0)
           {
+            if (coluna == 77)
+            {
+              Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i][3]));
+              Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i-1][3]));
+              limpaLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+              escreveLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
+              caracter = AjustaAtivo(aHorario[i-1][3]);
+              situacao = "escrito";
+            }
             i--;
             ImprimeHo(i);
             break;
@@ -546,6 +574,17 @@ void MovimentaHo()
             EEPROM.commit();
             aHorario[i][3] = 0;
           }
+          break;
+        }
+        if (coluna == 105)
+        {
+          Serial.println("Excluir");
+          ExcluirHorario(i);
+          i=0;
+          linha=24;
+          coluna=0;
+          caracter="->";
+          ImprimeHo(0);
           break;
         }
       }
@@ -772,6 +811,52 @@ void TelaErro(String menu, String linha1, String linha2)
       {
         cancel = true;
         break;
+      }
+    }
+  }
+}
+
+void ExcluirHorario(int i)
+{
+  int vlr = 0;
+  bool lExcluido = false;
+  Serial.println("Antes for");
+  for (vlr=0;vlr<6;vlr++)
+  {
+    Serial.println("vlr: "+String(vlr) + "  "+String(i));
+    if (vlr == i || lExcluido)
+    {
+      Serial.println("aHorario: "+String(aHorario[vlr+1][4]));
+      if (aHorario[vlr+1][4] != 255)
+      {
+        EEPROM.begin(255);
+        EEPROM.write(vlr,aHorario[vlr+1][0]);
+        EEPROM.write((vlr*5)+1,aHorario[vlr+1][1]);
+        EEPROM.write((vlr*5)+2,aHorario[vlr+1][2]);
+        EEPROM.write((vlr*5)+3,aHorario[vlr+1][3]);
+        EEPROM.write((vlr*5)+4,aHorario[vlr+1][4] - 1);
+        EEPROM.end();
+        aHorario[vlr][0] = aHorario[vlr+1][0];
+        aHorario[vlr][1] = aHorario[vlr+1][1];
+        aHorario[vlr][2] = aHorario[vlr+1][2];
+        aHorario[vlr][3] = aHorario[vlr+1][3];
+        aHorario[vlr][4] = aHorario[vlr+1][4] - 1;
+        lExcluido = true;
+      }
+      else
+      {
+        EEPROM.begin(255);
+        EEPROM.write(vlr,255);
+        EEPROM.write((vlr*5)+1,255);
+        EEPROM.write((vlr*5)+2,255);
+        EEPROM.write((vlr*5)+3,255);
+        EEPROM.write((vlr*5)+4,255);
+        EEPROM.end();
+        aHorario[vlr][0] = 255;
+        aHorario[vlr][1] = 255;
+        aHorario[vlr][2] = 255;
+        aHorario[vlr][3] = 255;
+        aHorario[vlr][4] = 255;
       }
     }
   }
