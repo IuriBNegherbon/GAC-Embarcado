@@ -4,10 +4,14 @@
 #include <iostream>
 #include <sstream>
 #include <EEPROM.h>
-
+#include <NTPClient.h>//Biblioteca do NTP.
+#include <WiFiUdp.h>//Biblioteca do UDP.
+#include <WiFi.h>//Biblioteca do WiFi.
 //#include "gac.h"
 //#include "images.h"
 
+WiFiUDP udp;//Cria um objeto "UDP".
+NTPClient ntp(udp, "a.st1.ntp.br", -3 * 3600, 60000);//Cria um objeto "NTP" com as configurações.
 SSD1306Wire  display(0x3c, 21, 22);
 
 int botaoSobe = 12;
@@ -21,6 +25,7 @@ int CarregaArray;
 int vbotaoDesce=0, vbotaoSobe=0, vbotaoOK = 0, vbotaoX=0, vbotaoDireita=0, vbotaoEsquerda=0;
 int tempoPisca = 350;
 long previousMillis;
+String hora;//Váriavel que armazenara o horario do NTP.
 
 void setup() {
   Serial.begin(9600);
@@ -32,6 +37,19 @@ void setup() {
   pinMode(botaoDireita, INPUT);
   pinMode(botaoEsquerda, INPUT);
   pinMode(botaoX, INPUT);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin("Bruning", "92372507");//Conecta ao WiFi.
+  delay(2000);//Espera a conexão.
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) 
+  {
+    Serial.println("Conexao falhou! Reiniciando...");
+    delay(2000);
+    ESP.restart();
+  }
+  ntp.begin();//Inicia o NTP.
+  ntp.forceUpdate();//Força o Update.
+  
   EEPROM.begin(255);
   for (CarregaArray=0;CarregaArray<6;CarregaArray++)
   {
@@ -112,10 +130,12 @@ void SMovimentaMe()
     situacao = VerificaTempo(coluna, linha, "->",situacao);
     //Serial.println(situacao);
     EstadoBotao();
+    VerificaHora();
     while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW)
     {
       situacao = VerificaTempo(coluna, linha, "->",situacao);
       EstadoBotao();
+      VerificaHora();
       if (vbotaoDesce == HIGH)
       {
         if (linha<25) // DESCE
@@ -579,7 +599,7 @@ void MovimentaHo()
       }
       if (vbotaoOK == HIGH) // OK
       {
-        if (coluna == 0 && aHorario[i+1][4] != 255)
+        if (coluna == 0 && aHorario[i][4] != 255)
         {
           Adicionar(true, AjustaHora(aHorario[i][0]), AjustaMinuto(aHorario[i][1]), AjustaRacao(aHorario[i][2]), "Alterar", i);
           ImprimeHo(0);
@@ -896,4 +916,25 @@ void ExcluirHorario(int i)
       }
     }
   }
+}
+
+void VerificaHora()
+{
+  int vlrHora;
+  hora = "";
+  for (vlrHora=0;vlrHora<5;vlrHora++)
+  {
+    hora = hora + ntp.getFormattedTime().charAt(vlrHora);
+  }
+  Serial.println(hora);//Printa a hora já formatada no monitor.
+  for (vlrHora=0;vlrHora<6;vlrHora++)
+  {
+    Serial.println(AjustaHora(aHorario[vlrHora][0]) + ":" + AjustaMinuto(aHorario[vlrHora][1]));
+    if (hora == AjustaHora(aHorario[vlrHora][0]) + ":" + AjustaMinuto(aHorario[vlrHora][1]) && aHorario[vlrHora][4] != 255)//Se a hora atual for igual à que definimos, irá acender o led.
+    {
+      Serial.println("Alimentando cachorro");
+      break;
+    }
+  }
+  //delay(1000);//Espera 1 segundo.
 }
