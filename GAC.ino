@@ -39,7 +39,7 @@ void setup() {
   pinMode(botaoX, INPUT);
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin("Bruning", "92372507");//Conecta ao WiFi.
+  WiFi.begin("WIFI", "SENHA WIFI");//Conecta ao WiFi.
   delay(2000);//Espera a conexão.
   while (WiFi.waitForConnectResult() != WL_CONNECTED) 
   {
