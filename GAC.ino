@@ -41,7 +41,7 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.begin("WIFI", "SENHA WIFI");//Conecta ao WiFi.
   delay(2000);//Espera a conexão.
-  while (WiFi.waitForConnectResult() != WL_CONNECTED) 
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) //Verifica se conectou, se não tenta de novo
   {
     Serial.println("Conexao falhou! Reiniciando...");
     delay(2000);
@@ -51,7 +51,7 @@ void setup() {
   ntp.forceUpdate();//Força o Update.
   
   EEPROM.begin(255);
-  for (CarregaArray=0;CarregaArray<6;CarregaArray++)
+  for (CarregaArray=0;CarregaArray<6;CarregaArray++) //Carrega as informações salvas na EEPROM para o awwat aHorario
   {
     aHorario[CarregaArray][0] = EEPROM.read((CarregaArray*5));          //Hora
     aHorario[CarregaArray][1] = EEPROM.read((CarregaArray*5)+1);        //Minuto
@@ -83,7 +83,7 @@ void loop()
 
 }
 
-void Menu()
+void Menu() //Cria tela do Menu
 {
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -116,31 +116,31 @@ void Menu()
   Serial.println(vbotaoX);*/
 }
 
-void SMovimentaMe()
+void SMovimentaMe() //movienta a seta do menu
 {
   int coluna = 0, linha = 15;//, vbotaoDesce = 0, vbotaoSobe=0, vbotaoOK = 0;
   bool cancel = false;
   String situacao = "apagado";
-  while (true)
+  while (true) //Não sai da função até que seja informado
   {
-    if (cancel)
+    if (cancel) // Se cancel for true, sai do while principal
     {
       break;
     }
-    situacao = VerificaTempo(coluna, linha, "->",situacao);
+    situacao = VerificaTempo(coluna, linha, "->",situacao); //VerificaTempo é a função para fazer piscar as informações. 3° parametro é a string que piscará e o 4° indica se a string esta apagada ou escrita no display
     //Serial.println(situacao);
-    EstadoBotao();
-    VerificaHora();
+    EstadoBotao(); //Pega o estado dos botões
+    VerificaHora(); //Verifica Hora atual e, se for igual a alguma das horas cadastradas alimenta cachorro
     while (vbotaoDesce == LOW && vbotaoSobe == LOW && vbotaoOK == LOW)
     {
-      situacao = VerificaTempo(coluna, linha, "->",situacao);
-      EstadoBotao();
-      VerificaHora();
+      situacao = VerificaTempo(coluna, linha, "->",situacao); //VerificaTempo é a função para fazer piscar as informações. 3° parametro é a string que piscará e o 4° indica se a string esta apagada ou escrita no display
+      EstadoBotao(); //Pega o estado dos botões
+      VerificaHora(); //Verifica Hora atual e, se for igual a alguma das horas cadastradas alimenta cachorro
       if (vbotaoDesce == HIGH)
       {
         if (linha<25) // DESCE
         {
-          limpaLed(0,linha,"->");
+          limpaLed(0,linha,"->"); //limpa do display a variavel que esta piscando
           linha += 10;
           break;
         }
@@ -158,20 +158,20 @@ void SMovimentaMe()
       {
         if (linha == 15)
         {
-          Adicionar(true, "00", "00", "000", "Adicionar", 99);
+          Adicionar(true, "00", "00", "000", "Adicionar", 99); //Chama função para adicionar horario
         }
         else if (linha == 25)
         {
-          Horarios();
+          Horarios(); //Chama função que lista os horarios cadastrados
         }
-        cancel = true;
+        cancel = true; //Sai do while para dar um "refresh"
         break;
       }
     }
   }
 }
 
-void Adicionar(bool chamaMov, String horarioStr, String MinutoStr, String racaoStr, String Tela, int i)
+void Adicionar(bool chamaMov, String horarioStr, String MinutoStr, String racaoStr, String Tela, int i) //Adicionar e Alterar. i é o Id do horario quando for alterar
 {
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -186,10 +186,10 @@ void Adicionar(bool chamaMov, String horarioStr, String MinutoStr, String racaoS
   display.drawString(10, 25, "Qtd Ração:");
   display.drawString(75, 25, racaoStr);
   display.display();
-  if (chamaMov)
+  if (chamaMov) //indica se chamará a tela para movimentar a seta ou é apenas para recarregar a pagina
   {
     MovimentAdd(Tela, i);
-    Serial.println("Saiu MovimentaAdd");
+    //Serial.println("Saiu MovimentaAdd");
   }
 }
 
@@ -199,7 +199,7 @@ void MovimentAdd(String Tela, int i)
   String horarioStr = "00", minutoStr = "00", racaoStr = "000",caracter="->",situacao = "apagado";
   bool cancel = false;
   
-  if (Tela == "Alterar")
+  if (Tela == "Alterar") //Se for para alterar, pega informações do array aHorario na posição de i
   {
     horarioStr = AjustaHora(aHorario[i][0]);
     horario = aHorario[i][0];
@@ -235,22 +235,24 @@ void MovimentAdd(String Tela, int i)
           }
           else if (coluna == 60 && linha == 15) // DESCE HORA
           {          
-              limpaLed(coluna,linha,horarioStr);
-              horario -= 1;
-              if (horario < 0)
-              {
-                horario = 23;
-              }
-              horarioStr = AjustaHora(horario);
-              caracter = horarioStr;
-              escreveLed(coluna,linha,caracter);
-              break;
+            //Altera as informações da hora
+            limpaLed(coluna,linha,horarioStr);
+            horario -= 1;
+            if (horario < 0) //se hora for negativo, recebe maior horario existente
+            {
+              horario = 23;
+            }
+            horarioStr = AjustaHora(horario);
+            caracter = horarioStr;
+            escreveLed(coluna,linha,caracter);
+            break;
           }
            else if (coluna == 84 && linha == 15) //DESCE MINUTO
           {   
+            //Altera as informações do minuto
             limpaLed(coluna,linha,minutoStr);
             minuto -= 5;
-            if (minuto < 0)
+            if (minuto < 0) //Se minuto for negativo, recebe maior minuto existente
             {       
               minuto = 55;
             }
@@ -261,9 +263,10 @@ void MovimentAdd(String Tela, int i)
           }
           else if (coluna == 75 && linha == 25) //DESCE RAÇÃO
           {
+            //Altera as informações da ração
             limpaLed(coluna,linha,racaoStr);
             racao -= 50;
-            if (racao < 0)
+            if (racao < 0) //Se ração for negativo, recebe o maximo configurado
             {       
               racao = 500;
             }
@@ -286,6 +289,7 @@ void MovimentAdd(String Tela, int i)
           }
           else if (coluna == 60 && linha == 15) //SOBE HORA
           {   
+            //Altera as informações da hora
             limpaLed(coluna,linha,horarioStr);
             horario += 1;
             if (horario > 23)
@@ -299,6 +303,7 @@ void MovimentAdd(String Tela, int i)
           }
           else if (coluna == 84 && linha == 15) //SOBE MINUTO
           {   
+            //Altera as informações do minuto
             limpaLed(coluna,linha,minutoStr);
             minuto += 5;
             if (minuto > 55)
@@ -327,7 +332,7 @@ void MovimentAdd(String Tela, int i)
       }
       if (vbotaoOK == HIGH) // OK
       {
-        if (linha == 15)
+        if (linha == 15) //Pula linha se for a primeira linha
         {
           escreveLed(coluna,linha,caracter);
           limpaLed(0,linha,"->");
@@ -338,67 +343,76 @@ void MovimentAdd(String Tela, int i)
         {
           limpaLed(0,linha,"->");
           caracter = "->";
-          if (aHorario[5][4] != 255 && Tela != "Alterar")
+          if (aHorario[5][4] != 255 && Tela != "Alterar") //Se a ultima posição possui registro, significa que não é possivel mais inserir. Verifica se é tela de inserir
           {
-            TelaErro("Cadastro cheio","Número máximo de","horarios atingidos");
-            Adicionar(false, horarioStr, minutoStr, racaoStr, "Adicionar", 99);
+            TelaErro("Cadastro cheio","Número máximo de","horarios atingidos"); //Informa tela de erro (Titulo,Linha 1,Linha 2)
+            Adicionar(false, horarioStr, minutoStr, racaoStr, "Adicionar", 99); //Chama adicionar apenas para recarregar a pagina
             coluna = 0;
             break;
           }
-          if (racao == 0)
+          if (racao == 0) //Se não for informado uma quantidade de ração não permite salvar
           {
-            TelaErro("Ração Zerada", "Vai alimentar seu animal", "com nada?");
-            Adicionar(false, horarioStr, minutoStr, racaoStr, "Adicionar", 99);
+            TelaErro("Ração Zerada", "Vai alimentar seu animal", "com nada?"); //Informa tela de erro (Titulo,Linha 1,Linha 2)
+            Adicionar(false, horarioStr, minutoStr, racaoStr, "Adicionar", 99); //Chama adicionar apenas para recarregar a pagina
             coluna = 0;
             break;
           }
-          if (Tela != "Alterar")
+          if (Tela != "Alterar") //Se for tela de inserir
           {
             for (H=0;H<6;H++)
             {
-              if (aHorario[H][4] == 255)
+              if (aHorario[H][4] == 255) //Verifica todas as posições a procura de uma sem registro
               {
-                  EEPROM.begin(255);
-                  EEPROM.write(H*5,horario);
-                  EEPROM.write((H*5)+1,minuto);
-                  EEPROM.write((H*5)+2,racao/10);
-                  EEPROM.write((H*5)+3,1);
-                  EEPROM.write((H*5)+4,H);
-                  EEPROM.end();
-                  aHorario[H][0] = horario;
-                  aHorario[H][1] = minuto;
-                  aHorario[H][2] = racao;
-                  aHorario[H][3] = 1;
-                  aHorario[H][4] = H;
-                  EEPROM.begin(255);
-                  Serial.println(EEPROM.read(0));
-                  Serial.println(EEPROM.read(1));
-                  Serial.println(EEPROM.read(2));
-                  Serial.println(EEPROM.read(3));
-                  Serial.println(EEPROM.read(4));
-                  Serial.println(EEPROM.read(5));
-                  EEPROM.end();
-                  cancel = true;
-                  break;
+                //Salva na EEPROM
+                EEPROM.begin(255);
+                EEPROM.write(H*5,horario);
+                EEPROM.write((H*5)+1,minuto);
+                EEPROM.write((H*5)+2,racao/10); //Ração deve ser dividido por 10 por limitações da EEPROM
+                EEPROM.write((H*5)+3,1);
+                EEPROM.write((H*5)+4,H);
+                EEPROM.end();
+                //Termina de salvar na EEPROM
+                //Salva no array aHorario
+                aHorario[H][0] = horario;
+                aHorario[H][1] = minuto;
+                aHorario[H][2] = racao;
+                aHorario[H][3] = 1;
+                aHorario[H][4] = H;
+                //Termina de salvar no array aHorario
+                EEPROM.begin(255);
+                Serial.println(EEPROM.read(0));
+                Serial.println(EEPROM.read(1));
+                Serial.println(EEPROM.read(2));
+                Serial.println(EEPROM.read(3));
+                Serial.println(EEPROM.read(4));
+                Serial.println(EEPROM.read(5));
+                EEPROM.end();
+                cancel = true;
+                break;
               }
             }
           }
-          else
+          else //Se for tela para alterar
           {
-              EEPROM.begin(255);
-              EEPROM.write(i*5,horario);
-              EEPROM.write((i*5)+1,minuto);
-              EEPROM.write((i*5)+2,racao/10);
-              //EEPROM.write((i*5)+3,1);
-              //EEPROM.write((i*5)+4,H);
-              EEPROM.end();
-              aHorario[i][0] = horario;
-              aHorario[i][1] = minuto;
-              aHorario[i][2] = racao;
-              //aHorario[i][3] = 1;
-              //aHorario[i][4] = H;
-              cancel = true;
-              break;
+            //Não precisa alterar o "Ativo" ou o "Id"
+            //Alteração na EEPROM do horario selecionado
+            EEPROM.begin(255);
+            EEPROM.write(i*5,horario);
+            EEPROM.write((i*5)+1,minuto);
+            EEPROM.write((i*5)+2,racao/10);
+            //EEPROM.write((i*5)+3,1);
+            //EEPROM.write((i*5)+4,H);
+            EEPROM.end();
+            //Fim alteração na EEPROM
+            //Alteração no Array
+            aHorario[i][0] = horario;
+            aHorario[i][1] = minuto;
+            aHorario[i][2] = racao;
+            //aHorario[i][3] = 1;
+            //aHorario[i][4] = H;
+            //fim alteração Array
+            cancel = true;
+            break;
           }
         }
         coluna = 0;
@@ -406,41 +420,40 @@ void MovimentAdd(String Tela, int i)
       }
       if (vbotaoX == HIGH) // cancel
       {
-        //linhamax = 45;
+        //Sai da tela atual e volta para a anterior
         cancel = true;
         coluna = 0;
         break;
-      }
-      
+      }   
       if (vbotaoDireita == HIGH) // DIREITA
       {
-        if (linha == 15)
+        if (linha == 15) //Se for linha dos horario
         {
-          if (coluna == 0)
+          if (coluna == 0) //Se estiver na seta
           {
-            limpaLed(coluna,linha,caracter);
-            escreveLed(coluna,linha,caracter);
-            caracter = horarioStr;
-            coluna = 60;
+            limpaLed(coluna,linha,caracter); //Limpa a informação piscando
+            escreveLed(coluna,linha,caracter);  //Escrever informação piscando (é feito isso para evitar que saia da posição e não mostre a informação)
+            caracter = horarioStr; //O horario passa a piscar
+            coluna = 60; //coluna da variavel do horario
             break;
           }
-          else if (coluna == 60)
+          else if (coluna == 60) //Se estiver na hora
           {
             limpaLed(coluna,linha,caracter);
             escreveLed(coluna,linha,caracter);
-            caracter = minutoStr;
-            coluna = 84;
+            caracter = minutoStr; //Minuto passa a piscar
+            coluna = 84; //Coluna da variavel do minuto
             break;
           }
         }
-        else if (linha == 25)
+        else if (linha == 25) //Se for linha da ração
         {
           if (coluna == 0)
           {
             limpaLed(coluna,linha,caracter);
             escreveLed(coluna,linha,caracter);
-            caracter = racaoStr;
-            coluna = 75;
+            caracter = racaoStr; //Ração passa a piscar
+            coluna = 75; //Coluna da variavel da ração
             break;
           }
         }
@@ -450,7 +463,7 @@ void MovimentAdd(String Tela, int i)
       {
         if (linha == 15)
         {
-          if (coluna == 60)
+          if (coluna == 60) //Se estiver na hora vai para a seta
           {
             limpaLed(coluna,linha,caracter);
             escreveLed(coluna,linha,caracter);
@@ -458,7 +471,7 @@ void MovimentAdd(String Tela, int i)
             caracter = "->";
             break;
           }
-          else if (coluna == 84)
+          else if (coluna == 84) //Se estiver no minuto vai para a hora
           {
             limpaLed(coluna,linha,caracter);
             escreveLed(coluna,linha,caracter);
@@ -469,7 +482,7 @@ void MovimentAdd(String Tela, int i)
         }
         else if (linha == 25)
         {
-          if (coluna == 75)
+          if (coluna == 75) //Se estiver na ração vai para a seta
           {
             limpaLed(coluna,linha,caracter);
             escreveLed(coluna,linha,caracter);
@@ -521,12 +534,12 @@ void MovimentaHo()
       {
         if (linha<54)
         {
-          if(i+1 < 6 && aHorario[i+1][4] != 255)
+          if(i+1 < 6 && aHorario[i+1][4] != 255) //Verificação para não descer a seta mais do que a quantidade de registros no array
           {
-            if (coluna == 77)
+            if (coluna == 77) //Se estiver na coluna do ativo (ON/OFF)
             {
-              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][3]));
-              Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][3]));
+              //Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][3]));
+              //Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][3]));
               limpaLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
               escreveLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
               caracter = AjustaAtivo(aHorario[i+1][3]);
@@ -540,14 +553,14 @@ void MovimentaHo()
         }
         else
         {
-          if (i>=3 && aHorario[i+1][4] != 255) // Se valor da linha for 4
+          if (i>=3 && aHorario[i+1][4] != 255) // Se estiver no ultimo horario informado no display, deve recarregar a tela com novos horarios
           {
             if(i+1 < 6) // Se o proximo for menor que 6 que é o maximo
             { 
               if (coluna == 77)
               {
-                Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][3]));
-                Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][3]));
+                //Serial.println("No Ativo: "+AjustaAtivo(aHorario[i][3]));
+                //Serial.println("No Ativo: "+AjustaAtivo(aHorario[i+1][3]));
                 limpaLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
                 escreveLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
                 caracter = AjustaAtivo(aHorario[i+1][3]);
@@ -566,8 +579,8 @@ void MovimentaHo()
         {
           if (coluna == 77)
           {
-            Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i][3]));
-            Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i-1][3]));
+            //Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i][3]));
+            //Serial.println("No Ativo SOBE: "+AjustaAtivo(aHorario[i-1][3]));
             limpaLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
             escreveLed(coluna,linha,AjustaAtivo(aHorario[i][3]));
             caracter = AjustaAtivo(aHorario[i-1][3]);
@@ -707,7 +720,7 @@ void ImprimeHo(int i)
   display.drawString(10, 14, "Hora");
   display.drawString(40, 14, "Ração");
   display.drawString(75, 14, "Ativo");
-  for (i;i<maxarray;i++)
+  for (i;i<maxarray;i++) //Imprime 4 horarios na tela, começando pelo valor de i recebido por parametro
     {
         if (aHorario[i][0] != 255)
         {
@@ -734,7 +747,7 @@ void ImprimeHo(int i)
     display.display();
 }
 
-void EstadoBotao()
+void EstadoBotao() //Pega o estado dos botões
 {
   vbotaoSobe = digitalRead(botaoSobe);
   vbotaoDesce = digitalRead(botaoDesce);
@@ -744,7 +757,7 @@ void EstadoBotao()
   vbotaoEsquerda = digitalRead(botaoEsquerda);
 } 
 
-void limpaLed(int coluna,int linha, String escrita)
+void limpaLed(int coluna,int linha, String escrita) //Limpa o valor escrito escrevendo em preto por cima
 {
    display.setColor(BLACK);
    display.drawString(coluna, linha, escrita);
@@ -752,26 +765,26 @@ void limpaLed(int coluna,int linha, String escrita)
    display.setColor(WHITE);
 }
 
-void escreveLed(int coluna,int linha, String escrita)
+void escreveLed(int coluna,int linha, String escrita) //Escreve a string passa por parametro
 {
   display.setColor(WHITE);
   display.drawString(coluna, linha, escrita);
   display.display();
 }
 
-String VerificaTempo(int coluna,int linha, String escrita, String situacao)
+String VerificaTempo(int coluna,int linha, String escrita, String situacao) //Faz a informação piscar no display
 {
   unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis > tempoPisca) 
+  if (currentMillis - previousMillis > tempoPisca) //Verifica variação do tempo. tempoPisca é uma constante declarada no inicio do fonte
   { 
     previousMillis = currentMillis;    // Salva o tempo atual
-    if (situacao == "escrito")
+    if (situacao == "escrito") //Se estiver escrito, apaga
     {
       limpaLed(coluna,linha,escrita);
       situacao = "apagado";
       return situacao;
     }
-    else if (situacao == "apagado")
+    else if (situacao == "apagado") //Se estiver apagado, escreve
     {
       escreveLed(coluna,linha,escrita);
       situacao = "escrito";
@@ -781,7 +794,7 @@ String VerificaTempo(int coluna,int linha, String escrita, String situacao)
   return situacao;
 }
 
-String AjustaHora(int Hora)
+String AjustaHora(int Hora) //Ajusta a hora passada de inteiro para string
 {
   String HoraStr;
   if (Hora < 10)
@@ -795,7 +808,7 @@ String AjustaHora(int Hora)
   return HoraStr;
 }
 
-String AjustaMinuto(int Minuto)
+String AjustaMinuto(int Minuto) //Ajusta o minuto passado de inteiro para string
 {
   String MinutoStr;
   if (Minuto < 10)
@@ -809,7 +822,7 @@ String AjustaMinuto(int Minuto)
   return MinutoStr;
 }
 
-String AjustaRacao(int Racao)
+String AjustaRacao(int Racao) //Ajusta a ração passada de inteiro para string
 {
   String RacaoStr;
   if (Racao < 100)
@@ -827,7 +840,7 @@ String AjustaRacao(int Racao)
   return RacaoStr;
 }
 
-String AjustaAtivo(int Ativo)
+String AjustaAtivo(int Ativo) //Ajusta o ativo passado de inteiro para string
 {
   String AtivoStr;
   if (Ativo == 1)
@@ -841,7 +854,7 @@ String AjustaAtivo(int Ativo)
   return AtivoStr;
 }
 
-void TelaErro(String menu, String linha1, String linha2)
+void TelaErro(String menu, String linha1, String linha2) //Tela de erro
 {
   bool cancel = false;
   display.clear();
@@ -853,7 +866,7 @@ void TelaErro(String menu, String linha1, String linha2)
   display.drawString(0, 24, linha1);
   display.drawString(0, 34, linha2);
   display.display();
-  while (true)
+  while (true) //Fica preso na tela de erro até que alguma tecla seja pressionada
   {
     if (cancel)
     {
@@ -872,17 +885,21 @@ void TelaErro(String menu, String linha1, String linha2)
   }
 }
 
+//A função de excluir, alem de excluir passa todos os registros cadastrados posteriormente uma posição abaixo, por exemplo
+//Supondo que possuem 4 registros: 0 = 12:50, 1 = 10:20, 2 = 19:35, 3 = 22:00.
+//Ao exlcuir o registro 1, o registro 2 passa a ser o 1 e o 3 passa a ser o 2, ficando dessa maneira.
+//0 = 12:50, 1 = 19:35, 2 = 22:00
 void ExcluirHorario(int i)
 {
   int vlr = 0;
   bool lExcluido = false;
-  Serial.println("Antes for");
-  for (vlr=0;vlr<6;vlr++)
+  //Serial.println("Antes for");
+  for (vlr=0;vlr<6;vlr++) //Passa por todos os horarios
   {
-    Serial.println("vlr: "+String(vlr) + "  "+String(i));
-    if (vlr == i)
+    //Serial.println("vlr: "+String(vlr) + "  "+String(i));
+    if (vlr == i) //Se "vlr" for igual ao Id ho horario, exclui
     {
-      if (vlr == 5 || aHorario[vlr+1][4] == 255)
+      if (vlr == 5 || aHorario[vlr+1][4] == 255) //Se "vlr" for a ultima posição ou o proximo registro estiver vazio, limpa o registro atual
       {
         EEPROM.begin(255);
         EEPROM.write(vlr*5,255);
@@ -897,7 +914,7 @@ void ExcluirHorario(int i)
         aHorario[vlr][3] = 255;
         aHorario[vlr][4] = 255;
       }
-      else
+      else //Se "vlr" não for a ultima posição e o proximo registro não estiver vazio, salva na posição do vlr as informações do proxima registro
       {
         Serial.println("aHorario: "+String(aHorario[vlr+1][4]));
         EEPROM.begin(255);
@@ -922,14 +939,15 @@ void VerificaHora()
 {
   int vlrHora;
   hora = "";
-  for (vlrHora=0;vlrHora<5;vlrHora++)
+  for (vlrHora=0;vlrHora<5;vlrHora++) //Pega os 5 primeiros caracteres da hora atual que é informada como hh:mm:ss
   {
-    hora = hora + ntp.getFormattedTime().charAt(vlrHora);
+    hora = hora + ntp.getFormattedTime().charAt(vlrHora); //Pega caracter por caracter da hora
   }
-  Serial.println(hora);//Printa a hora já formatada no monitor.
-  for (vlrHora=0;vlrHora<6;vlrHora++)
+  //Serial.println(hora);//Printa a hora já formatada no monitor.
+  for (vlrHora=0;vlrHora<6;vlrHora++) //Compara a variavel "hora" com todos os registros salvos no array em busca de igualdade
   {
-    Serial.println(AjustaHora(aHorario[vlrHora][0]) + ":" + AjustaMinuto(aHorario[vlrHora][1]));
+    //Serial.println(AjustaHora(aHorario[vlrHora][0]) + ":" + AjustaMinuto(aHorario[vlrHora][1]));
+    //Se hora atual for igual a alguma hora cadastrada, alimenta o cachorro
     if (hora == AjustaHora(aHorario[vlrHora][0]) + ":" + AjustaMinuto(aHorario[vlrHora][1]) && aHorario[vlrHora][4] != 255)//Se a hora atual for igual à que definimos, irá acender o led.
     {
       Serial.println("Alimentando cachorro");
