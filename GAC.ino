@@ -7,8 +7,13 @@
 #include <NTPClient.h>//Biblioteca do NTP.
 #include <WiFiUdp.h>//Biblioteca do UDP.
 #include <WiFi.h>//Biblioteca do WiFi.
+#include <IOXhop_FirebaseESP32.h>
 //#include "gac.h"
 //#include "images.h"
+
+#define FIREBASE_HOST "gacapp-8b4eb.firebaseio.com"
+#define WIFI_SSID "AndroidAP"
+#define WIFI_PASSWORD "hqir9667"
 
 WiFiUDP udp;//Cria um objeto "UDP".
 NTPClient ntp(udp, "a.st1.ntp.br", -3 * 3600, 60000);//Cria um objeto "NTP" com as configurações.
@@ -39,16 +44,17 @@ void setup() {
   pinMode(botaoX, INPUT);
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin("WIFI", "SENHA WIFI");//Conecta ao WiFi.
-  delay(2000);//Espera a conexão.
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);//Conecta ao WiFi.
+  delay(500);//Espera a conexão.
   while (WiFi.waitForConnectResult() != WL_CONNECTED) //Verifica se conectou, se não tenta de novo
   {
     Serial.println("Conexao falhou! Reiniciando...");
-    delay(2000);
+    delay(500);
     ESP.restart();
   }
   ntp.begin();//Inicia o NTP.
   ntp.forceUpdate();//Força o Update.
+  Firebase.begin(FIREBASE_HOST);
   
   EEPROM.begin(255);
   for (CarregaArray=0;CarregaArray<6;CarregaArray++) //Carrega as informações salvas na EEPROM para o awwat aHorario
@@ -60,10 +66,10 @@ void setup() {
     aHorario[CarregaArray][4] = EEPROM.read((CarregaArray*5)+4);        //Id
   }
   EEPROM.end();
-
   // Initialising the UI will init the display too.
+  Serial.println(Firebase.getFloat("09319782970/user_data/0/user_data_racao"));
   display.init();
-
+  Bd();
   display.flipScreenVertically();
 }
 
@@ -81,6 +87,41 @@ void loop()
   Menu();
   //MovimentaMenu(45);
 
+}
+
+void Bd() {
+  //EEPROM.begin(255);
+  String var;
+  Serial.println("Entrou BD");
+  for (CarregaArray=0;CarregaArray<6;CarregaArray++) //Carrega as informações salvas na EEPROM para o awwat aHorario
+  {
+    var = String("/09319782970/user_data/") + String(CarregaArray);
+    //Serial.println(CarregaArray);
+    //Serial.println(Firebase.getInt(var + "/user_data_racao"));
+    //Serial.println(Firebase.getInt(var + "/user_data_racao") > 0);
+    if (Firebase.getInt(var + "/user_data_racao") > 0 ) {   
+      aHorario[CarregaArray][0] = Firebase.getInt(var + "/user_data_hora");
+      aHorario[CarregaArray][1] = Firebase.getInt(var + "/user_data_minuto");
+      aHorario[CarregaArray][2] = Firebase.getInt(var + "/user_data_racao");
+      aHorario[CarregaArray][3] = Firebase.getInt(var + "/user_data_ativo");
+      aHorario[CarregaArray][4] = CarregaArray;
+    }
+    else {
+      aHorario[CarregaArray][0] = 255;
+      aHorario[CarregaArray][1] = 255;
+      aHorario[CarregaArray][2] = 255;
+      aHorario[CarregaArray][3] = 255;
+      aHorario[CarregaArray][4] = 255;
+    }
+    EEPROM.begin(255);
+    EEPROM.write(CarregaArray*5, aHorario[CarregaArray][0]);
+    EEPROM.write((CarregaArray*5)+1, aHorario[CarregaArray][1]);
+    EEPROM.write((CarregaArray*5)+2, aHorario[CarregaArray][2]/10); //Ração deve ser dividido por 10 por limitações da EEPROM
+    EEPROM.write((CarregaArray*5)+3, aHorario[CarregaArray][3]);
+    EEPROM.write((CarregaArray*5)+4, aHorario[CarregaArray][4]);
+    EEPROM.end();
+  }
+  //EEPROM.end();
 }
 
 void Menu() //Cria tela do Menu
@@ -365,7 +406,7 @@ void MovimentAdd(String Tela, int i)
               {
                 //Salva na EEPROM
                 EEPROM.begin(255);
-                EEPROM.write(H*5,horario);
+                EEPROM.write(H*5,horario);  
                 EEPROM.write((H*5)+1,minuto);
                 EEPROM.write((H*5)+2,racao/10); //Ração deve ser dividido por 10 por limitações da EEPROM
                 EEPROM.write((H*5)+3,1);
@@ -378,6 +419,11 @@ void MovimentAdd(String Tela, int i)
                 aHorario[H][2] = racao;
                 aHorario[H][3] = 1;
                 aHorario[H][4] = H;
+                String var = String("/09319782970/user_data/") + String(H);
+                Firebase.setFloat(var + "/user_data_hora", aHorario[H][0]);
+                Firebase.setFloat(var + "/user_data_minuto", aHorario[H][1]);
+                Firebase.setFloat(var + "/user_data_racao", aHorario[H][2]);
+                Firebase.setFloat(var + "/user_data_ativo", aHorario[H][3]);
                 //Termina de salvar no array aHorario
                 EEPROM.begin(255);
                 Serial.println(EEPROM.read(0));
@@ -408,6 +454,9 @@ void MovimentAdd(String Tela, int i)
             aHorario[i][0] = horario;
             aHorario[i][1] = minuto;
             aHorario[i][2] = racao;
+            Firebase.setInt(String("/09319782970/user_data/") + String(i) + "/user_data_hora", horario);
+            Firebase.setInt(String("/09319782970/user_data/") + String(i) + "/user_data_minuto", minuto);
+            Firebase.setInt(String("/09319782970/user_data/") + String(i) + "/user_data_racao", racao);
             //aHorario[i][3] = 1;
             //aHorario[i][4] = H;
             //fim alteração Array
@@ -631,6 +680,7 @@ void MovimentaHo()
             EEPROM.write((i*5)+3,1);
             EEPROM.commit();
             aHorario[i][3] = 1;
+            Firebase.setInt(String("/09319782970/user_data/") + String(i) + "/user_data_ativo", 1);
           }
           else if (aHorario[i][3] == 1)
           {
@@ -642,6 +692,7 @@ void MovimentaHo()
             EEPROM.write((i*5)+3,0);
             EEPROM.commit();
             aHorario[i][3] = 0;
+            Firebase.setInt(String("/09319782970/user_data/") + String(i) + "/user_data_ativo", 0);
           }
           break;
         }
@@ -894,6 +945,7 @@ void ExcluirHorario(int i)
   int vlr = 0;
   bool lExcluido = false;
   //Serial.println("Antes for");
+  Firebase.remove("09319782970/user_data/"+ String(i));
   for (vlr=0;vlr<6;vlr++) //Passa por todos os horarios
   {
     //Serial.println("vlr: "+String(vlr) + "  "+String(i));
@@ -929,6 +981,11 @@ void ExcluirHorario(int i)
         aHorario[vlr][2] = aHorario[vlr+1][2];
         aHorario[vlr][3] = aHorario[vlr+1][3];
         aHorario[vlr][4] = aHorario[vlr+1][4] - 1;
+        Firebase.setInt(String("/09319782970/user_data/") + String(aHorario[vlr][4]) + "/user_data_hora", aHorario[vlr+1][0]);
+        Firebase.setInt(String("/09319782970/user_data/") + String(aHorario[vlr][4]) + "/user_data_minuto", aHorario[vlr+1][1]);
+        Firebase.setInt(String("/09319782970/user_data/") + String(aHorario[vlr][4]) + "/user_data_racao", aHorario[vlr+1][2]);
+        Firebase.setInt(String("/09319782970/user_data/") + String(aHorario[vlr][4]) + "/user_data_ativo", aHorario[vlr+1][3]);
+        Firebase.remove(String("/09319782970/user_data/") + String(vlr+1));
         i++;
       }
     }
