@@ -11,7 +11,8 @@
 //#include "gac.h"
 //#include "images.h"
 
-#define FIREBASE_HOST "gacapp-8b4eb.firebaseio.com"
+//#define FIREBASE_HOST "gacapp-8b4eb.firebaseio.com" 
+#define FIREBASE_HOST "gac-tcc.firebaseio.com"
 #define WIFI_SSID "AndroidAP"
 #define WIFI_PASSWORD "hqir9667"
 
@@ -43,22 +44,32 @@ void setup() {
   pinMode(botaoEsquerda, INPUT);
   pinMode(botaoX, INPUT);
 
+  Serial.println("WIFI");
+  /*display.init();
+  display.flipScreenVertically();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);*/
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);//Conecta ao WiFi.
   delay(500);//Espera a conexão.
   while (WiFi.waitForConnectResult() != WL_CONNECTED) //Verifica se conectou, se não tenta de novo
   {
-    Serial.println("Conexao falhou! Reiniciando...");
+    Serial.println("Conexao falhou! Reiniciando..."); 
+    //display.clear();
+    //display.drawString(10, 15, "Conexao falhou! Reiniciando...");
     delay(500);
     ESP.restart();
   }
   ntp.begin();//Inicia o NTP.
   ntp.forceUpdate();//Força o Update.
+  Serial.println("Conectou"); 
   Firebase.begin(FIREBASE_HOST);
+  Serial.println("Passou firebase"); 
   
   EEPROM.begin(255);
   for (CarregaArray=0;CarregaArray<6;CarregaArray++) //Carrega as informações salvas na EEPROM para o awwat aHorario
   {
+    Serial.println("EEPROM");
     aHorario[CarregaArray][0] = EEPROM.read((CarregaArray*5));          //Hora
     aHorario[CarregaArray][1] = EEPROM.read((CarregaArray*5)+1);        //Minuto
     aHorario[CarregaArray][2] = (EEPROM.read((CarregaArray*5)+2))*10;   //Ração
@@ -67,7 +78,10 @@ void setup() {
   }
   EEPROM.end();
   // Initialising the UI will init the display too.
-  Serial.println(Firebase.getFloat("09319782970/user_data/0/user_data_racao"));
+  Serial.println("Antes Firebase");
+  //Serial.println(Firebase.getInt("/usuario/gac/user_data_ativo"));
+  Serial.println(Firebase.getInt("user_data_ativo"));
+  Serial.println("Depois Firebase");
   display.init();
   Bd();
   display.flipScreenVertically();
