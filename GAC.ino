@@ -13,6 +13,7 @@
 
 //#define FIREBASE_HOST "gacapp-8b4eb.firebaseio.com" 
 #define FIREBASE_HOST "gac-tcc.firebaseio.com"
+#define FIREBASE_AUTH "eJsgHfmjEQo3yvHK9vUskFiiMdtcoSuXV1hWET9c"
 #define WIFI_SSID "AndroidAP"
 #define WIFI_PASSWORD "hqir9667"
 
@@ -63,7 +64,7 @@ void setup() {
   ntp.begin();//Inicia o NTP.
   ntp.forceUpdate();//Força o Update.
   Serial.println("Conectou"); 
-  Firebase.begin(FIREBASE_HOST);
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Serial.println("Passou firebase"); 
   
   EEPROM.begin(255);
